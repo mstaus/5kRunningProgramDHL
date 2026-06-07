@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mit Løbeprogram – DHL Stafet 27. august</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Karla:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- FIREBASE — erstat de 7 værdier herunder med dine egne fra Firebase Console -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ════════════════════════════════════════════════════
+  // INDSÆT DINE FIREBASE-VÆRDIER HER (fra trin 3 i guiden)
+  const firebaseConfig = {
+    apiKey:            "DIN_API_KEY",
+    authDomain:        "DIT_PROJEKT.firebaseapp.com",
+    databaseURL:       "https://DIT_PROJEKT-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:         "DIT_PROJEKT",
+    storageBucket:     "DIT_PROJEKT.appspot.com",
+    messagingSenderId: "DIN_SENDER_ID",
+    appId:             "DIN_APP_ID"
+  };
+  // ════════════════════════════════════════════════════
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const DB_PATH = "lobeskema/state";
+
+  let saveTimer = null;
+
+  function setSS(state, msg, time) {
+    const dot = document.getElementById('sdot');
+    const txt = document.getElementById('stxt');
+    const tim = document.getElementById('stime');
+    if (!dot) return;
+    dot.className = 'sdot ' + state;
+    txt.textContent = msg;
+    tim.textContent = time || '';
+  }
+
+  async function loadState() {
+    try {
+      const snap = await get(ref(db, DB_PATH));
+      const saved = snap.exists() ? snap.val() : {};
+      applyState(saved);
+      const ts = saved._at
+        ? new Date(saved._at).toLocaleString('da-DK', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+        : '';
+      setSS('synced', 'Synkroniseret på tværs af enheder ☁️', ts ? 'Sidst gemt ' + ts : '');
+    } catch(e) {
+      setSS('error', 'Kunne ikke forbinde til databasen — tjek din internetforbindelse', '');
+      applyState({});
+    }
+    updateProgress();
+  }
+
+  function applyState(saved) {
+    document.querySelectorAll('.ftoggle').forEach(t => {
+      const w = t.dataset.week;
+      if (saved['fb-' + w]) {
+        t.checked = true;
+        applyFootball(w, true);
+      }
+    });
+    document.querySelectorAll('.session:not(.rest-s)[id]').forEach(s => {
+      if (saved[s.id]) s.classList.add('done');
+    });
+  }
+
+  function scheduleSave() {
+    setSS('syncing', 'Gemmer…', '');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 800);
+  }
+
+  async function doSave() {
+    const state = { _at: new Date().toISOString() };
+    document.querySelectorAll('.session:not(.rest-s)[id]').forEach(s => {
+      state[s.id] = s.classList.contains('done');
+    });
+    document.querySelectorAll('.ftoggle').forEach(t => {
+      state['fb-' + t.dataset.week] = t.checked;
+    });
+    try {
+      await set(ref(db, DB_PATH), state);
+      const ts = new Date().toLocaleString('da-DK', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      setSS('synced', 'Gemt i skyen — tilgængeligt på alle enheder ☁️', 'Sidst gemt ' + ts);
+    } catch(e) {
+      setSS('error', 'Kunne ikke gemme — tjek din internetforbindelse', '');
+    }
+  }
+
+  function applyFootball(week, on) {
+    const fb  = document.querySelector('#s-' + week + '-f');
+    const opt = document.querySelector('#s-' + week + '-opt');
+    if (fb)  fb.style.display  = on ? 'flex' : 'none';
+    if (opt) opt.style.display = on ? 'none' : 'flex';
+  }
+
+  function updateProgress() {
+    const all  = Array.from(document.querySelectorAll('.session:not(.rest-s)[id]'))
+                      .filter(s => s.style.display !== 'none');
+    const done = all.filter(s => s.classList.contains('done')).length;
+    const total = all.length;
+    const pct  = total ? Math.round(done / total * 100) : 0;
+    document.getElementById('prog-in').style.width   = pct + '%';
+    document.getElementById('prog-txt').textContent  = done + ' / ' + total + ' ture gennemført';
+    document.getElementById('stat-d').textContent    = done;
+    document.getElementById('stat-t').textContent    = total;
+    document.getElementById('stat-p').textContent    = pct + '%';
+  }
+
+  // Eksponér til global scope så onclick-handlere virker
+  window.tog = function(el) {
+    const s = el.closest('.session');
+    if (s.classList.contains('rest-s')) return;
+    s.classList.toggle('done');
+    scheduleSave();
+    updateProgress();
+  };
+
+  window.applyFootball  = applyFootball;
+  window.scheduleSave   = scheduleSave;
+  window.updateProgress = updateProgress;
+
+  // Boot
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.ftoggle').forEach(t => {
+      t.addEventListener('change', () => {
+        applyFootball(t.dataset.week, t.checked);
+        scheduleSave();
+        updateProgress();
+      });
+    });
+    loadState();
+  });
+</script>
+
+<style>
+:root {
+  --bg:#f4f0e8;--bg2:#ede8de;--card:#fff;--ink:#1a1612;--ink2:#4a4540;
+  --muted:#9a948a;--accent:#d4500a;--accent2:#e8682a;
+  --green:#2a7a3b;--green-bg:#e8f5eb;
+  --football:#7a4a1a;--football-bg:#f5eddf;
+  --border:rgba(26,22,18,0.1);--radius:14px;
+  --shadow:0 2px 12px rgba(26,22,18,0.08),0 1px 3px rgba(26,22,18,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Karla',sans-serif;padding-bottom:60px;}
+
+header{background:var(--ink);color:var(--bg);padding:28px 20px 24px;position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(212,80,10,0.2);}
+.header-inner{max-width:700px;margin:0 auto;position:relative;z-index:1;}
+.htag{font-family:'Syne',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+h1{font-family:'Syne',sans-serif;font-size:clamp(28px,7vw,48px);font-weight:800;line-height:1;margin-bottom:4px;}
+h1 .hl{color:var(--accent2);}
+.hmeta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.mchip{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:5px 12px;font-size:11px;color:rgba(244,240,232,0.85);}
+
+.wrap{max-width:700px;margin:0 auto;padding:0 16px;}
+
+.sync-bar{margin:14px 0 0;}
+.sync-inner{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 14px;box-shadow:var(--shadow);}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--muted);transition:background 0.3s;}
+.sdot.syncing{background:#f59e0b;animation:pulse 1s infinite;}
+.sdot.synced{background:var(--green);}
+.sdot.error{background:#ef4444;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.stxt{font-size:12px;color:var(--muted);font-family:'Syne',sans-serif;flex:1;}
+.stime{font-size:11px;color:var(--muted);white-space:nowrap;}
+
+.prog-wrap{margin:14px 0 0;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Syne',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.prog-lbl span{color:var(--accent);font-weight:700;}
+.prog-out{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;border:1px solid var(--border);}
+.prog-in{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width 0.5s cubic-bezier(.4,0,.2,1);width:0%;}
+
+.tempo-box{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px;}
+.tempo-ttl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink2);grid-column:1/-1;margin-bottom:4px;}
+.tempo-item{background:var(--bg);border-radius:10px;padding:10px 12px;border:1px solid var(--border);}
+.tempo-lbl{font-family:'Syne',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.tempo-val{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--ink);}
+.tempo-val small{font-family:'Karla',sans-serif;font-size:11px;font-weight:400;color:var(--muted);margin-left:2px;}
+.tempo-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.phase-lbl{font-family:'Syne',sans-serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin:24px 0 10px;display:flex;align-items:center;gap:10px;}
+.phase-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.pbadge{background:var(--accent);color:#fff;border-radius:4px;padding:2px 7px;font-size:8px;letter-spacing:1px;}
+.pbadge.green{background:var(--green);}
+
+.wcard{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:8px;overflow:hidden;transition:box-shadow 0.2s;}
+.wcard:hover{box-shadow:0 4px 18px rgba(26,22,18,0.12);}
+.wcard.dhl-week{border-color:rgba(42,122,59,0.4);background:linear-gradient(135deg,#f0faf2,#fff);}
+.wheader{display:flex;align-items:center;padding:14px 16px;gap:12px;}
+.wnbox{background:var(--ink);color:var(--bg);border-radius:9px;width:40px;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;font-family:'Syne',sans-serif;}
+.wcard.dhl-week .wnbox{background:var(--green);}
+.wnbox .wn{font-size:16px;font-weight:800;line-height:1;}
+.wnbox .wl{font-size:7px;letter-spacing:1px;opacity:0.5;text-transform:uppercase;}
+.winfo{flex:1;}
+.wtitle{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:1px;}
+.wdates{font-size:11px;color:var(--muted);}
+.wright{display:flex;align-items:center;gap:8px;}
+
+.toggle-wrap{display:flex;align-items:center;gap:6px;}
+.tlbl{font-size:11px;color:var(--muted);}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.tslider{position:absolute;inset:0;background:var(--bg2);border-radius:99px;border:1px solid var(--border);cursor:pointer;transition:background 0.2s;}
+.tslider::before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:transform 0.2s,background 0.2s;}
+.toggle input:checked+.tslider{background:var(--football-bg);border-color:var(--football);}
+.toggle input:checked+.tslider::before{transform:translateX(16px);background:var(--football);}
+
+.wsessions{padding:0 16px 14px;display:flex;flex-direction:column;gap:7px;}
+.session{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;}
+.session.run-easy{background:var(--bg);border:1px solid var(--border);}
+.session.run-long{background:#fff8f3;border:1px solid rgba(212,80,10,0.2);}
+.session.run-race{background:var(--green-bg);border:1px solid rgba(42,122,59,0.25);}
+.session.football-s{background:var(--football-bg);border:1px solid rgba(122,74,26,0.25);}
+.session.rest-s{background:var(--bg2);border:1px solid var(--border);opacity:0.6;}
+.session.done{opacity:0.45;}
+.session.done .stxt2{text-decoration:line-through;}
+.scheck{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);background:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:11px;color:transparent;user-select:none;}
+.scheck:hover{border-color:var(--accent);}
+.session.done .scheck{background:var(--accent);border-color:var(--accent);color:#fff;}
+.session.run-race.done .scheck{background:var(--green);border-color:var(--green);}
+.session.football-s.done .scheck{background:var(--football);border-color:var(--football);}
+.sico{font-size:15px;flex-shrink:0;}
+.sbody{flex:1;}
+.stxt2{font-size:12px;font-weight:600;color:var(--ink);font-family:'Syne',sans-serif;}
+.smeta{font-size:10px;color:var(--muted);margin-top:1px;}
+.stempo{font-size:11px;color:var(--accent);font-weight:600;font-family:'Syne',sans-serif;background:rgba(212,80,10,0.08);padding:2px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;}
+.session.football-s .stempo{color:var(--football);background:rgba(122,74,26,0.08);}
+.session.run-race .stempo{color:var(--green);background:rgba(42,122,59,0.1);}
+
+.wnote{margin:0 16px 12px;background:var(--bg);border-radius:8px;padding:7px 11px;font-size:11px;color:var(--ink2);line-height:1.5;border-left:3px solid var(--accent);}
+.wnote.green{border-left-color:var(--green);}
+
+.finish{background:var(--ink);border-radius:var(--radius);padding:22px;text-align:center;position:relative;overflow:hidden;margin-top:10px;}
+.finish::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(212,80,10,0.15);}
+.fbig{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--bg);position:relative;z-index:1;margin-bottom:6px;}
+.fbig span{color:var(--accent2);}
+.fsub{font-size:13px;color:rgba(244,240,232,0.6);line-height:1.6;position:relative;z-index:1;}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--accent);line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:10px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="htag">🏃 Mit løbeprogram 2026</div>
+    <h1>DHL Stafet<br><span class="hl">27. August</span></h1>
+    <div class="hmeta">
+      <div class="mchip">📍 Start: 3 km / 20 min</div>
+      <div class="mchip">🎯 Mål: 5 km / 30 min</div>
+      <div class="mchip">📅 13 uger</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sync-bar">
+    <div class="sync-inner">
+      <div class="sdot" id="sdot"></div>
+      <div class="stxt" id="stxt">Forbinder til databasen…</div>
+      <div class="stime" id="stime"></div>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-lbl"><span id="prog-txt">0 / 0 ture gennemført</span></div>
+    <div class="prog-out"><div class="prog-in" id="prog-in"></div></div>
+  </div>
+
+  <div class="tempo-box">
+    <div class="tempo-ttl">🕐 Tempoguide — vejen til 5 km på 30 min</div>
+    <div class="tempo-item"><div class="tempo-lbl">Roligt (uge 1–5)</div><div class="tempo-val">7:30<small>min/km</small></div><div class="tempo-sub">Kan tale i sætninger</div></div>
+    <div class="tempo-item"><div class="tempo-lbl">Moderat (uge 6–9)</div><div class="tempo-val">7:00<small>min/km</small></div><div class="tempo-sub">Korte svar, men ok</div></div>
+    <div class="tempo-item"><div class="tempo-lbl">Mål-tempo (uge 10+)</div><div class="tempo-val">6:00<small>min/km</small></div><div class="tempo-sub">5 km = 30:00 min</div></div>
+    <div class="tempo-item"><div class="tempo-lbl">DHL-dag</div><div class="tempo-val">6:00<small>min/km</small></div><div class="tempo-sub">Start roligt – hold det</div></div>
+  </div>
+
+  <div class="phase-lbl">Fase 1 — Byg rytmen <span class="pbadge">UGE 1–4</span></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">1</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Byg vanen</div><div class="wdates">2.–8. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="1"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-1-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-easy" id="s-1-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div></div></div><div class="wnote">Bliv fortrolig med dit tempo. Du skal kunne tale undervejs – ingen stress! 😊</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">2</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første skub</div><div class="wdates">9.–15. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="2"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-2-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-long" id="s-2-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km lidt længere</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div></div></div><div class="wnote">Første lille distanceskub! Tag den 3,5 km roligt – nyd turen. 🌳</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">3</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første 3-ture uge</div><div class="wdates">16.–22. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="3"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-3-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-long" id="s-3-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-easy" id="s-3-opt" data-opt="3"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:30 min/km</div></div></div><div class="wnote">I fodbolduge: spring den 3. tur over. ⚽</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">4</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første 4 km! 🎉</div><div class="wdates">23.–29. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="4"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-4-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-long" id="s-4-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km — ny rekord!</div><div class="smeta">~30 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session football-s" id="s-4-f" data-fb="4" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">Milepæl: første gang du løber 4 km! 💪</div></div>
+
+  <div class="phase-lbl">Fase 2 — Byg distance <span class="pbadge">UGE 5–8</span></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">5</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Hold niveauet</div><div class="wdates">30. juni – 6. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="5"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-5-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session run-long" id="s-5-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km</div><div class="smeta">~30 min</div></div><div class="stempo">7:30 min/km</div></div><div class="session football-s" id="s-5-f" data-fb="5" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">Lad kroppen vænne sig til 4 km. Du er i god fremgang! 🌟</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">6</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Tempo begynder</div><div class="wdates">7.–13. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="6"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-6-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~25 min</div></div><div class="stempo">7:00 min/km</div></div><div class="session run-long" id="s-6-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div></div><div class="session football-s" id="s-6-f" data-fb="6" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">Tempo stiger til 7:00 min/km. Du mærker snart forskellen! ⚡</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">7</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Sommerløb</div><div class="wdates">14.–20. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="7"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-7-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~25 min</div></div><div class="stempo">7:00 min/km</div></div><div class="session run-long" id="s-7-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div></div><div class="session run-easy" id="s-7-opt" data-opt="7"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:00 min/km</div></div><div class="session football-s" id="s-7-f" data-fb="7" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">☀️ Løb tidligt om morgenen hvis det er varmt.</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">8</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">FØRSTE 5 KM! 🏅</div><div class="wdates">21.–27. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="8"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-8-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km rolig tur</div><div class="smeta">~28 min</div></div><div class="stempo">7:00 min/km</div></div><div class="session run-long" id="s-8-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🎉</div><div class="sbody"><div class="stxt2">5 km — gennemfør den!</div><div class="smeta">Tempo er ikke vigtigt nu — bare gennemfør</div></div><div class="stempo">7:00 min/km</div></div><div class="session football-s" id="s-8-f" data-fb="8" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">KIG HER: Første 5 km nogensinde. Det er en KÆMPE sejr! 🎊</div></div>
+
+  <div class="phase-lbl">Fase 3 — Finpuds & tempo <span class="pbadge">UGE 9–12</span></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">9</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">5 km er din nye normal</div><div class="wdates">28. juli – 3. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="9"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-9-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km</div><div class="smeta">~27 min</div></div><div class="stempo">6:45 min/km</div></div><div class="session run-long" id="s-9-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km — kender du det!</div><div class="smeta">~34 min</div></div><div class="stempo">6:45 min/km</div></div><div class="session football-s" id="s-9-f" data-fb="9" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">5 km er ikke tilfældigt mere – det er din nye normal! ⚡</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">10</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Mål-tempo 🎯</div><div class="wdates">4.–10. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="10"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-10-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km rolig</div><div class="smeta">~24 min</div></div><div class="stempo">6:00 min/km</div></div><div class="session run-long" id="s-10-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km mål-tempo!</div><div class="smeta">Mål: under 30 min 🎯</div></div><div class="stempo">6:00 min/km</div></div><div class="session run-easy" id="s-10-opt" data-opt="10"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">6:00 min/km</div></div><div class="session football-s" id="s-10-f" data-fb="10" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">Prøv din første 5 km på præcis 6:00 min/km = 30 min!</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">11</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">En uge fra DHL</div><div class="wdates">11.–17. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="11"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-11-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km</div><div class="smeta">~24 min</div></div><div class="stempo">6:00 min/km</div></div><div class="session run-long" id="s-11-2"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km med selvtillid</div><div class="smeta">~30 min — du har gjort det før!</div></div><div class="stempo">6:00 min/km</div></div><div class="session football-s" id="s-11-f" data-fb="11" style="display:none"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div></div></div><div class="wnote">Løb med selvtillid – DHL er om én uge! 🏅</div></div>
+
+  <div class="wcard"><div class="wheader"><div class="wnbox"><div class="wn">12</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Nedtrapning — spar kræfter</div><div class="wdates">18.–24. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="12"><span class="tslider"></span></label></div></div></div><div class="wsessions"><div class="session run-easy" id="s-12-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km kort og frisk</div><div class="smeta">~18 min</div></div><div class="stempo">6:00 min/km</div></div><div class="session rest-s"><div class="scheck" style="pointer-events:none;opacity:0.3">✓</div><div class="sico">😴</div><div class="sbody"><div class="stxt2">Hvil, spis godt og sov</div><div class="smeta">Kroppen lader op til DHL</div></div></div></div><div class="wnote green">Nedtrapningsuge. Klog sport – ikke dovenskab! 💚</div></div>
+
+  <div class="phase-lbl">Race Day <span class="pbadge green">27. AUGUST</span></div>
+  <div class="wcard dhl-week"><div class="wheader"><div class="wnbox"><div class="wn">🏁</div><div class="wl">DHL</div></div><div class="winfo"><div class="wtitle">DHL Stafet — Det store løb!</div><div class="wdates">Torsdag 27. august 2026</div></div></div><div class="wsessions"><div class="session run-race" id="s-dhl-1"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏅</div><div class="sbody"><div class="stxt2">5 km DHL Stafet</div><div class="smeta">Varm op 5–8 min · Start roligt · Hold 6:00 min/km</div></div><div class="stempo">Mål: 30 min</div></div></div><div class="wnote green">Start IKKE for hurtigt – hold 6:00 min/km de første 2 km. Det er en fest! 🎉</div></div>
+
+  <div class="finish">
+    <div class="fbig">Du <span>klarer</span> det! 💪</div>
+    <div class="fsub">Fra 3 km til 5 km på 30 min på 13 uger.<br>Husk: hver tur du gennemfører er en sejr.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="stat-d">0</div><div class="stat-lbl">gennemført</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-t">0</div><div class="stat-lbl">ture i alt</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-p">0%</div><div class="stat-lbl">fremgang</div></div>
+  </div>
+</div>
+
+</body>
+</html>
