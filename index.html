@@ -135,29 +135,38 @@
     document.getElementById('stat-p').textContent    = pct+'%';
   }
 
-  window.tog = function(el) {
-    const s = el.closest('.session');
-    if (s.classList.contains('rest-s')) return;
-    s.classList.toggle('done');
-    scheduleSave();
-    updateProgress();
-  };
-
-  window.toggleLog = function(el) {
-    const s  = el.closest('.session');
-    const lp = s.querySelector('.log-panel');
-    const open = lp.style.display === 'none' || lp.style.display === '';
-    lp.style.display = open ? 'block' : 'none';
-    el.textContent = open ? '▲ Skjul' : '📝 Log';
-    scheduleSave();
-  };
-
-  window.onFieldChange = function() { scheduleSave(); };
-  window.applyFootball  = applyFootball;
-  window.scheduleSave   = scheduleSave;
-  window.updateProgress = updateProgress;
-
   document.addEventListener('DOMContentLoaded', () => {
+
+    // Tjekbokse
+    document.querySelectorAll('.scheck').forEach(el => {
+      if (el.style.pointerEvents === 'none') return;
+      el.addEventListener('click', () => {
+        const s = el.closest('.session');
+        if (s.classList.contains('rest-s')) return;
+        s.classList.toggle('done');
+        scheduleSave();
+        updateProgress();
+      });
+    });
+
+    // Log-knapper
+    document.querySelectorAll('.log-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const s  = btn.closest('.session');
+        const lp = s.querySelector('.log-panel');
+        const open = lp.style.display === 'none' || lp.style.display === '';
+        lp.style.display = open ? 'block' : 'none';
+        btn.textContent = open ? '▲ Skjul' : '📝 Log';
+        scheduleSave();
+      });
+    });
+
+    // Dato- og note-felter — brug 'input' så det fyrer ved hver tastetryk
+    document.querySelectorAll('.s-date, .s-note').forEach(el => {
+      el.addEventListener('input', () => scheduleSave());
+    });
+
+    // Fodbold-toggles
     document.querySelectorAll('.ftoggle').forEach(t => {
       t.addEventListener('change', () => {
         applyFootball(t.dataset.week, t.checked);
@@ -165,6 +174,7 @@
         updateProgress();
       });
     });
+
     loadState();
   });
 </script>
@@ -347,12 +357,12 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">1</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Byg vanen</div><div class="wdates">2.–8. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="1"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-easy" id="s-1-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-1-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-1-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km rolig tur</div><div class="smeta">~22 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-1-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-1-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-1-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-1-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-1-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-1-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-1-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote purple">⚡ Intervallerne erstatter den anden rolige tur. Hård men kontrolleret — du skal ikke kunne tale under intervallerne.</div>
@@ -363,12 +373,12 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">2</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første skub</div><div class="wdates">9.–15. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="2"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-easy" id="s-2-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-2-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-2-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-2-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-2-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-2-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-2-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-2-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-2-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-2-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">Første lille distanceskub på den rolige tur. Intervalturen holder samme struktur. 🌳</div>
@@ -379,16 +389,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">3</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første 3-ture uge</div><div class="wdates">16.–22. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="3"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-easy" id="s-3-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-3-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 3 min</div><div class="smeta">5 min opvarmning · 4×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-easy" id="s-3-opt" data-opt="3">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-opt" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-opt" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-3-opt"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-3-opt" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">God uge med 3 ture — spring den 3. over i fodbolduge. ⚽</div>
@@ -399,16 +409,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">4</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Første 4 km! 🎉</div><div class="wdates">23.–29. juni 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="4"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-4-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km — ny rekord!</div><div class="smeta">~30 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km — ny rekord!</div><div class="smeta">~30 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-4-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 3 min</div><div class="smeta">5 min opvarmning · 5×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 3 min</div><div class="smeta">5 min opvarmning · 5×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-4-f" data-fb="4" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-4-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-4-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">Milepæl: første 4 km! Intervallerne stiger til 5 gentagelser denne uge. 💪</div>
@@ -421,16 +431,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">5</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Hold niveauet</div><div class="wdates">30. juni – 6. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="5"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-easy" id="s-5-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3,5 km rolig tur</div><div class="smeta">~26 min</div></div><div class="stempo">7:30 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-5-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 3 min</div><div class="smeta">5 min opvarmning · 5×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 3 min</div><div class="smeta">5 min opvarmning · 5×3 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-5-f" data-fb="5" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-5-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-5-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">Lad kroppen vænne sig til 4 km + intervaller. Du er i god fremgang! 🌟</div>
@@ -441,16 +451,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">6</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Længere rolig tur</div><div class="wdates">7.–13. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="6"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-6-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km rolig tur</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km rolig tur</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-6-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-6-f" data-fb="6" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-6-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-6-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote purple">⚡ Intervallerne stiger til 4 min — du mærker det første par gange, men kroppen tilpasser sig hurtigt.</div>
@@ -461,20 +471,20 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">7</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Sommerløb</div><div class="wdates">14.–20. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="7"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-7-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4,5 km</div><div class="smeta">~32 min</div></div><div class="stempo">7:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-7-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-easy" id="s-7-opt" data-opt="7">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-opt" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-opt" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">7:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-opt"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-opt" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-7-f" data-fb="7" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-7-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-7-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">☀️ Løb tidligt om morgenen hvis det er varmt. Husk vand!</div>
@@ -485,16 +495,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">8</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">FØRSTE 5 KM! 🏅</div><div class="wdates">21.–27. juli 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="8"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-interval" id="s-8-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 4 min</div><div class="smeta">5 min opvarmning · 5×4 min hårdt / 2 min rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-long" id="s-8-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🎉</div><div class="sbody"><div class="stxt2">5 km — gennemfør den!</div><div class="smeta">Tempo er ikke vigtigt — bare gennemfør</div></div><div class="stempo">7:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🎉</div><div class="sbody"><div class="stxt2">5 km — gennemfør den!</div><div class="smeta">Tempo er ikke vigtigt — bare gennemfør</div></div><div class="stempo">7:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-8-f" data-fb="8" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-8-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-8-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">KIG HER: Første 5 km nogensinde. Det er en KÆMPE sejr! 🎊</div>
@@ -507,16 +517,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">9</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">5 km er din nye normal</div><div class="wdates">28. juli – 3. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="9"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-9-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km rolig</div><div class="smeta">~34 min</div></div><div class="stempo">6:45 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km rolig</div><div class="smeta">~34 min</div></div><div class="stempo">6:45 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-9-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 5 min</div><div class="smeta">5 min opvarmning · 5×5 min hårdt / 90 sek rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 5 min</div><div class="smeta">5 min opvarmning · 5×5 min hårdt / 90 sek rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-9-f" data-fb="9" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-9-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-9-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote purple">⚡ Intervallerne stiger til 5 min med kortere pause — 30 min-målet begynder at tage form!</div>
@@ -527,20 +537,20 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">10</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Mål-tempo 🎯</div><div class="wdates">4.–10. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="10"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-10-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km mål-tempo!</div><div class="smeta">Mål: under 30 min 🎯</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-1" placeholder="Hvad blev tiden?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km mål-tempo!</div><div class="smeta">Mål: under 30 min 🎯</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-1" placeholder="Hvad blev tiden?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-10-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 5 min</div><div class="smeta">5 min opvarmning · 5×5 min hårdt / 90 sek rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 5 × 5 min</div><div class="smeta">5 min opvarmning · 5×5 min hårdt / 90 sek rolig · 5 min nedkøling</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session run-easy" id="s-10-opt" data-opt="10">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-opt" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-opt" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">4 km nem tur</div><div class="smeta">Ekstra tur — spring over hvis fodbold</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-opt"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-opt" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-10-f" data-fb="10" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-10-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-10-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">Prøv din første 5 km på præcis 6:00 min/km = 30 min. Skriv tiden i loggen! ✍️</div>
@@ -551,16 +561,16 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">11</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">En uge fra DHL</div><div class="wdates">11.–17. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="11"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-long" id="s-11-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km med selvtillid</div><div class="smeta">~30 min — du har gjort det før!</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-1" placeholder="Hvad blev tiden?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">5 km med selvtillid</div><div class="smeta">~30 min — du har gjort det før!</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-1" placeholder="Hvad blev tiden?"></textarea></div></div></div>
       </div>
       <div class="session run-interval" id="s-11-2">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 4 min</div><div class="smeta">Kortere end normalt — spar lidt til DHL-ugen</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-2" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-2" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚡</div><div class="sbody"><div class="stxt2">Intervaller: 4 × 4 min</div><div class="smeta">Kortere end normalt — spar lidt til DHL-ugen</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-2"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-2" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session football-s" id="s-11-f" data-fb="11" style="display:none">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-f" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-f" placeholder="Hvordan gik kampen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">⚽</div><div class="sbody"><div class="stxt2">Fodboldkamp</div><div class="smeta">Tæller som konditionstræning</div></div><div class="stempo">Aktiv hvile</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-11-f"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-11-f" placeholder="Hvordan gik kampen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote">Løb med selvtillid – DHL er om én uge! Intervallerne er kortere denne uge for at spare kræfter. 🏅</div>
@@ -571,8 +581,8 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">12</div><div class="wl">Uge</div></div><div class="winfo"><div class="wtitle">Nedtrapning — spar kræfter</div><div class="wdates">18.–24. aug 2026</div></div><div class="wright"><div class="toggle-wrap"><span class="tlbl">⚽</span><label class="toggle"><input type="checkbox" class="ftoggle" data-week="12"><span class="tslider"></span></label></div></div></div>
     <div class="wsessions">
       <div class="session run-easy" id="s-12-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km kort og frisk</div><div class="smeta">~18 min — hold det nemt</div></div><div class="stempo">6:00 min/km</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-12-1" onchange="onFieldChange()"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-12-1" placeholder="Hvordan gik det?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏃</div><div class="sbody"><div class="stxt2">3 km kort og frisk</div><div class="smeta">~18 min — hold det nemt</div></div><div class="stempo">6:00 min/km</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-12-1"></div><div class="log-field"><label>Noter</label><textarea class="s-note" data-sid="s-12-1" placeholder="Hvordan gik det?"></textarea></div></div></div>
       </div>
       <div class="session rest-s">
         <div class="srow"><div class="scheck" style="pointer-events:none;opacity:0.3">✓</div><div class="sico">😴</div><div class="sbody"><div class="stxt2">Hvil, spis godt og sov</div><div class="smeta">Kroppen lader op til DHL</div></div></div>
@@ -586,8 +596,8 @@ h1 .hl{color:var(--accent2);}
     <div class="wheader"><div class="wnbox"><div class="wn">🏁</div><div class="wl">DHL</div></div><div class="winfo"><div class="wtitle">DHL Stafet — Det store løb!</div><div class="wdates">Torsdag 27. august 2026</div></div></div>
     <div class="wsessions">
       <div class="session run-race" id="s-dhl-1">
-        <div class="srow"><div class="scheck" onclick="tog(this)">✓</div><div class="sico">🏅</div><div class="sbody"><div class="stxt2">5 km DHL Stafet</div><div class="smeta">Varm op 5–8 min · Start roligt · Hold 6:00 min/km</div></div><div class="stempo">Mål: 30 min</div><button class="log-btn" onclick="toggleLog(this)">📝 Log</button></div>
-        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-dhl-1" onchange="onFieldChange()"></div><div class="log-field"><label>Din tid & noter</label><textarea class="s-note" data-sid="s-dhl-1" placeholder="Hvad blev din tid? Hvordan var oplevelsen?" onchange="onFieldChange()"></textarea></div></div></div>
+        <div class="srow"><div class="scheck">✓</div><div class="sico">🏅</div><div class="sbody"><div class="stxt2">5 km DHL Stafet</div><div class="smeta">Varm op 5–8 min · Start roligt · Hold 6:00 min/km</div></div><div class="stempo">Mål: 30 min</div><button class="log-btn">📝 Log</button></div>
+        <div class="log-panel"><div class="log-fields"><div class="log-field"><label>Dato</label><input type="date" class="s-date" data-sid="s-dhl-1"></div><div class="log-field"><label>Din tid & noter</label><textarea class="s-note" data-sid="s-dhl-1" placeholder="Hvad blev din tid? Hvordan var oplevelsen?"></textarea></div></div></div>
       </div>
     </div>
     <div class="wnote green">Start IKKE for hurtigt – hold 6:00 min/km de første 2 km. Det er en fest med kollegerne! 🎉</div>
